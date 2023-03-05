@@ -30,6 +30,7 @@ module ariane_peripherals #(
     AXI_BUS.Slave      spi             ,
     AXI_BUS.Slave      ethernet        ,
     AXI_BUS.Slave      timer           ,
+    // AXI_BUS.Slave      NetworkInterface           ,
     output logic [1:0] irq_o           ,
     // UART
     input  logic       rx_i            ,
@@ -53,6 +54,26 @@ module ariane_peripherals #(
     input  logic       spi_miso        ,
     output logic       spi_ss
 );
+
+    // always_ff @(posedge clk_i) begin
+    //     if(NetworkInterface.w_valid & NetworkInterface.w_ready) begin
+    //         $display("Writing to Network Interface: 0x%0x", NetworkInterface.w_data);
+    //     end
+    // end
+
+    // assign NetworkInterface.aw_ready = 1'b1;
+    // assign NetworkInterface.ar_ready = 1'b1;
+    // assign NetworkInterface.w_ready = 1'b1;
+
+    // assign NetworkInterface.b_valid = NetworkInterface.aw_valid;
+    // assign NetworkInterface.b_id = NetworkInterface.aw_id;
+    // assign NetworkInterface.b_resp = axi_pkg::RESP_OKAY;
+    // assign NetworkInterface.b_user = '0;
+
+    // assign NetworkInterface.r_valid = NetworkInterface.ar_valid;
+    // assign NetworkInterface.r_resp = axi_pkg::RESP_OKAY;
+    // assign NetworkInterface.r_data = 'hdeadbeef;
+    // assign NetworkInterface.r_last = 1'b1;
 
     // ---------------
     // 1. PLIC

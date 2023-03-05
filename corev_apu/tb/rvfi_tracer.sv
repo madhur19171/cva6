@@ -66,6 +66,8 @@ module rvfi_tracer #(
       end else if (rvfi_i[i].trap)
         $fwrite(f, "exception : 0x%h\n", pc64);
     end
+    if(cycles % 1000 == 0)
+      $display("Cycles Completed:\t%0dK", cycles / 1000);
     if (cycles > SIM_FINISH) $finish(1);
   end
 

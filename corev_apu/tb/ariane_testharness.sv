@@ -92,6 +92,28 @@ module ariane_testharness #(
     .AXI_USER_WIDTH ( AXI_USER_WIDTH           )
   ) master[ariane_soc::NB_PERIPHERALS-1:0]();
 
+  // AXI Bus for Core-DMA-Memory Interface
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH   ),
+    .AXI_DATA_WIDTH ( AXI_DATA_WIDTH      ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidth ),
+    .AXI_USER_WIDTH ( AXI_USER_WIDTH      )
+  ) slave_memory[1 : 0]();
+  // Index 0 is for Core and Index 1 is for DMA
+
+  AXI_BUS #(
+    .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH        ),
+    .AXI_DATA_WIDTH ( AXI_DATA_WIDTH           ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
+    .AXI_USER_WIDTH ( AXI_USER_WIDTH           )
+  ) master_DRAM[0 : 0]();
+
+  // AXI Lite Interface for 
+  AXI_LITE #(
+    .AXI_ADDR_WIDTH(AXI_ADDRESS_WIDTH),
+    .AXI_DATA_WIDTH(AXI_DATA_WIDTH)
+  ) axi_lite_NI_DMA_config ();
+
   rstgen i_rstgen_main (
     .clk_i        ( clk_i                ),
     .rst_ni       ( rst_ni & (~ndmreset) ),
@@ -402,32 +424,32 @@ module ariane_testharness #(
   ) i_axi_riscv_atomics (
     .clk_i,
     .rst_ni ( ndmreset_n               ),
-    .slv    ( master[ariane_soc::DRAM] ),
+    .slv    ( master_DRAM[0] ),
     .mst    ( dram                     )
   );
 
-  AXI_BUS #(
-    .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH        ),
-    .AXI_DATA_WIDTH ( AXI_DATA_WIDTH           ),
-    .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
-    .AXI_USER_WIDTH ( AXI_USER_WIDTH           )
-  ) dram_delayed();
+  // AXI_BUS #(
+  //   .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH        ),
+  //   .AXI_DATA_WIDTH ( AXI_DATA_WIDTH           ),
+  //   .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
+  //   .AXI_USER_WIDTH ( AXI_USER_WIDTH           )
+  // ) dram_delayed();
 
-  axi_delayer_intf #(
-    .AXI_ID_WIDTH        ( ariane_soc::IdWidthSlave ),
-    .AXI_ADDR_WIDTH      ( AXI_ADDRESS_WIDTH        ),
-    .AXI_DATA_WIDTH      ( AXI_DATA_WIDTH           ),
-    .AXI_USER_WIDTH      ( AXI_USER_WIDTH           ),
-    .STALL_RANDOM_INPUT  ( StallRandomInput         ),
-    .STALL_RANDOM_OUTPUT ( StallRandomOutput        ),
-    .FIXED_DELAY_INPUT   ( 0                        ),
-    .FIXED_DELAY_OUTPUT  ( 0                        )
-  ) i_axi_delayer (
-    .clk_i  ( clk_i        ),
-    .rst_ni ( ndmreset_n   ),
-    .slv    ( dram         ),
-    .mst    ( dram_delayed )
-  );
+  // axi_delayer_intf #(
+  //   .AXI_ID_WIDTH        ( ariane_soc::IdWidthSlave ),
+  //   .AXI_ADDR_WIDTH      ( AXI_ADDRESS_WIDTH        ),
+  //   .AXI_DATA_WIDTH      ( AXI_DATA_WIDTH           ),
+  //   .AXI_USER_WIDTH      ( AXI_USER_WIDTH           ),
+  //   .STALL_RANDOM_INPUT  ( StallRandomInput         ),
+  //   .STALL_RANDOM_OUTPUT ( StallRandomOutput        ),
+  //   .FIXED_DELAY_INPUT   ( 0                        ),
+  //   .FIXED_DELAY_OUTPUT  ( 0                        )
+  // ) i_axi_delayer (
+  //   .clk_i  ( clk_i        ),
+  //   .rst_ni ( ndmreset_n   ),
+  //   .slv    (          ),
+  //   .mst    ( dram_delayed )
+  // );
 
   axi2mem #(
     .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
@@ -437,7 +459,7 @@ module ariane_testharness #(
   ) i_axi2mem (
     .clk_i  ( clk_i        ),
     .rst_ni ( ndmreset_n   ),
-    .slave  ( dram_delayed ),
+    .slave  ( dram ),
     .req_o  ( req          ),
     .we_o   ( we           ),
     .addr_o ( addr         ),
@@ -447,6 +469,9 @@ module ariane_testharness #(
     .user_i ( ruser        ),
     .data_i ( rdata        )
   );
+
+  // In verilator simulation, size of simulated SRAM is smaller than 2^32 so the addresses overlap
+  // Keep this in mind while accessing addresses in C/C++ code.
 
   sram #(
     .DATA_WIDTH ( AXI_DATA_WIDTH ),
@@ -490,6 +515,7 @@ module ariane_testharness #(
     '{ idx: ariane_soc::SPI,      start_addr: ariane_soc::SPIBase,      end_addr: ariane_soc::SPIBase + ariane_soc::SPILength           },
     '{ idx: ariane_soc::Ethernet, start_addr: ariane_soc::EthernetBase, end_addr: ariane_soc::EthernetBase + ariane_soc::EthernetLength },
     '{ idx: ariane_soc::GPIO,     start_addr: ariane_soc::GPIOBase,     end_addr: ariane_soc::GPIOBase + ariane_soc::GPIOLength         },
+    '{ idx: ariane_soc::NI_DMA,   start_addr: ariane_soc::NI_DMABase,   end_addr: ariane_soc::NI_DMABase + ariane_soc::NI_DMALength     },
     '{ idx: ariane_soc::DRAM,     start_addr: ariane_soc::DRAMBase,     end_addr: ariane_soc::DRAMBase + ariane_soc::DRAMLength         }
   };
 
@@ -522,6 +548,164 @@ module ariane_testharness #(
     .en_default_mst_port_i ( '0         ),
     .default_mst_port_i    ( '0         )
   );
+
+
+
+  // AXI Xbar for multiplexing Core and DMA to DRAM
+
+  axi_pkg::xbar_rule_64_t [0:0] addr_map_DRAM;
+
+  assign addr_map_DRAM = '{
+    '{ idx: ariane_soc::DRAM,     start_addr: ariane_soc::DRAMBase,     end_addr: ariane_soc::DRAMBase + ariane_soc::DRAMLength         }
+  };
+
+  localparam axi_pkg::xbar_cfg_t AXI_XBAR_MEMORY_CFG = '{
+    NoSlvPorts: 2,
+    NoMstPorts: 1,
+    MaxMstTrans: 1, // Probably requires update
+    MaxSlvTrans: 1, // Probably requires update
+    FallThrough: 1'b0,
+    LatencyMode: axi_pkg::NO_LATENCY,
+    AxiIdWidthSlvPorts: ariane_soc::IdWidth,
+    AxiIdUsedSlvPorts: ariane_soc::IdWidth,
+    UniqueIds: 1'b0,
+    AxiAddrWidth: AXI_ADDRESS_WIDTH,
+    AxiDataWidth: AXI_DATA_WIDTH,
+    NoAddrRules: 1
+  };
+
+  axi_xbar_intf #(
+    .AXI_USER_WIDTH ( AXI_USER_WIDTH          ),
+    .Cfg            ( AXI_XBAR_MEMORY_CFG     ),
+    .rule_t         ( axi_pkg::xbar_rule_64_t )
+  ) i_axi_DRAM_xbar (
+    .clk_i                 ( clk_i      ),
+    .rst_ni                ( ndmreset_n ),
+    .test_i                ( test_en    ),
+    .slv_ports             ( slave_memory ),
+    .mst_ports             ( master_DRAM     ),
+    .addr_map_i            ( addr_map_DRAM   ),
+    .en_default_mst_port_i ( '0         ),
+    .default_mst_port_i    ( '0         )
+  );
+
+  // Connecting DRAM request coming from the Core to the DRAM Xbar
+  ariane_axi_soc::req_slv_t  core_DRAM_req;
+  ariane_axi_soc::resp_slv_t core_DRAM_resp;
+
+  ariane_axi_soc::req_slv_t  slave_memory_core_req;
+  ariane_axi_soc::resp_slv_t slave_memory_core_resp;
+
+  `AXI_ASSIGN_TO_REQ(core_DRAM_req, master[ariane_soc::DRAM])
+  `AXI_ASSIGN_FROM_RESP(master[ariane_soc::DRAM], core_DRAM_resp)
+
+  `AXI_ASSIGN_FROM_REQ(slave_memory[0], slave_memory_core_req)
+  `AXI_ASSIGN_TO_RESP(slave_memory_core_resp, slave_memory[0])
+
+  assign slave_memory_core_req = core_DRAM_req;
+  assign core_DRAM_resp = slave_memory_core_resp;
+
+
+  // AXI DMA (with AXI Lite channel for configuration)
+
+  // Bridge to convert between AXI-4 and AXI-Lite
+  axi_to_axi_lite_intf #(
+    .AXI_ADDR_WIDTH(AXI_ADDRESS_WIDTH),
+    .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
+    .AXI_ID_WIDTH(1),
+    .FALL_THROUGH(0)
+  ) i_axi_to_axi_lite_intf
+  (
+    .clk_i              (clk_i),
+    .rst_ni             (rst_ni),
+
+    .testmode_i         (0),
+    
+    .slv                (master[ariane_soc::NI_DMA]),
+    
+    .mst                (axi_lite_NI_DMA_config)
+  );
+
+  wire [AXI_DATA_WIDTH - 1 : 0] master_data_out;
+  wire master_valid_out;
+  wire master_last_out;
+  wire master_ready_out;
+
+  wire [AXI_DATA_WIDTH - 1 : 0] slave_data_in;
+  wire slave_valid_in;
+  wire slave_last_in;
+  wire slave_ready_in;
+
+  axi_dma_lite_config #(
+    .AXI_CONFIG_BASE_ADDR(ariane_soc::NI_DMABase),
+    .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
+    .AXI_ADDR_WIDTH(AXI_ADDRESS_WIDTH),
+    .AXIS_LAST_ENABLE(0),
+    .LEN_WIDTH(20),
+    .TAG_WIDTH(8)
+  ) i_axi_dma_lite_config
+  (
+    .clk(clk_i),
+    .rst(~rst_ni),
+
+    .config_slave       (axi_lite_NI_DMA_config),
+
+    .master             (slave_memory[1]),
+
+    .axis_master_data   (master_data_out),
+    .axis_master_valid  (master_valid_out),
+    .axis_master_last   (master_last_out),
+    .axis_master_ready  (master_ready_out),
+
+    .axis_slave_data    (slave_data_in),
+    .axis_slave_valid   (slave_valid_in),
+    .axis_slave_last    (slave_last_in),
+    .axis_slave_ready   (slave_ready_in),
+
+    .read_enable        (1),
+    .write_enable       (1),
+    .write_abort        (0)
+  );
+
+  axi_stream_fifo #(
+    .DATA_WIDTH(AXI_DATA_WIDTH),
+    .FIFO_DEPTH(8)
+  ) i_axi_stream_fifo
+  (
+    .clk                (clk_i),
+    .rst                (~rst_ni),
+
+    .not_empty          (slave_valid_in),
+    .rd_en              (slave_ready_in),
+    .dout               (slave_data_in),
+
+    .not_full           (master_ready_out),
+    .wr_en              (master_valid_out),
+    .din                (master_data_out),
+
+    .FIFOoccupancy      ()
+  );
+
+  // axi_stream_dump #(
+  //   .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
+  //   .SLAVE_DUMP_FILE("/mnt/tmp/Slave_Dump.dmp")
+  // ) i_axi_stream_dump
+
+  // (
+  //   .clk                (clk_i),
+  //   .rst                (~rst_ni),
+
+  //   .slave_data_in      (master_data_out),
+  //   .slave_valid_in     (master_valid_out),
+  //   .slave_last_in      (master_last_out),
+  //   .slave_ready_in     (master_ready_out),
+
+  //   .master_data_out    (),
+  //   .master_valid_out   (),
+  //   .master_last_out    (),
+  //   .master_ready_out   ()
+
+  // );
 
   // ---------------
   // CLINT

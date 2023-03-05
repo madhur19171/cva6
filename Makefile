@@ -172,6 +172,7 @@ src :=  $(filter-out core/ariane_regfile.sv, $(wildcard core/*.sv))             
         $(wildcard corev_apu/axi_mem_if/src/*.sv)                                    \
         $(wildcard core/pmp/src/*.sv)                                                \
         $(wildcard core/cvxif_example/*.sv)                                          \
+		$(wildcard corev_apu/axi/src/axi_dma/*.sv)                                   \
         corev_apu/rv_plic/rtl/rv_plic_target.sv                                      \
         corev_apu/rv_plic/rtl/rv_plic_gateway.sv                                     \
         corev_apu/rv_plic/rtl/plic_regmap.sv                                         \
@@ -186,13 +187,16 @@ src :=  $(filter-out core/ariane_regfile.sv, $(wildcard core/*.sv))             
         corev_apu/riscv-dbg/debug_rom/debug_rom.sv                                   \
         corev_apu/register_interface/src/apb_to_reg.sv                               \
         corev_apu/axi/src/axi_multicut.sv                                            \
-        common/submodules/common_cells/src/rstgen_bypass.sv                          \
+        corev_apu/axi/src/axi_burst_splitter.sv                                            \
+		common/submodules/common_cells/src/rstgen_bypass.sv                          \
         common/submodules/common_cells/src/rstgen.sv                                 \
         common/submodules/common_cells/src/stream_mux.sv                             \
         common/submodules/common_cells/src/stream_demux.sv                           \
         common/submodules/common_cells/src/exp_backoff.sv                            \
         common/submodules/common_cells/src/addr_decode.sv                            \
         common/submodules/common_cells/src/stream_register.sv                        \
+		common/submodules/common_cells/src/id_queue.sv                        \
+		common/submodules/common_cells/src/onehot_to_bin.sv                        \
         corev_apu/axi/src/axi_cut.sv                                                 \
         corev_apu/axi/src/axi_join.sv                                                \
         corev_apu/axi/src/axi_delayer.sv                                             \
