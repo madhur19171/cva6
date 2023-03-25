@@ -9,7 +9,7 @@
 	url = https://github.com/pulp-platform/common_cells.git
 [submodule "corev_apu/axi"]
 	path = corev_apu/axi
-	url = https://github.com/pulp-platform/axi.git
+	url = https://github.com/madhur19171/axi.git
 [submodule "corev_apu/register_interface"]
 	path = corev_apu/register_interface
 	url = https://github.com/pulp-platform/register_interface.git
