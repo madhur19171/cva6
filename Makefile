@@ -173,6 +173,7 @@ src :=  $(filter-out core/ariane_regfile.sv, $(wildcard core/*.sv))             
         $(wildcard core/pmp/src/*.sv)                                                \
         $(wildcard core/cvxif_example/*.sv)                                          \
 		$(wildcard corev_apu/axi/src/axi_dma/*.sv)                                   \
+		$(wildcard corev_apu/Router/*.sv)                                   \
         corev_apu/rv_plic/rtl/rv_plic_target.sv                                      \
         corev_apu/rv_plic/rtl/rv_plic_gateway.sv                                     \
         corev_apu/rv_plic/rtl/plic_regmap.sv                                         \

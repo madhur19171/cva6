@@ -667,24 +667,28 @@ module ariane_testharness #(
     .write_abort        (0)
   );
 
-  axi_stream_fifo #(
-    .DATA_WIDTH(AXI_DATA_WIDTH),
-    .FIFO_DEPTH(8)
-  ) i_axi_stream_fifo
-  (
-    .clk                (clk_i),
-    .rst                (~rst_ni),
+  Router i_router (.clk(clk_i), .rst(~rst_ni), 
+          .data_in_bus(master_data_out), .valid_in_bus(master_valid_out), .ready_in_bus(master_ready_out),
+          .data_out_bus(slave_data_in), .valid_out_bus(slave_valid_in), .ready_out_bus(5'b11111));
 
-    .not_empty          (slave_valid_in),
-    .rd_en              (slave_ready_in),
-    .dout               (slave_data_in),
+  // axi_stream_fifo #(
+  //   .DATA_WIDTH(AXI_DATA_WIDTH),
+  //   .FIFO_DEPTH(1024)
+  // ) i_axi_stream_fifo
+  // (
+  //   .clk                (clk_i),
+  //   .rst                (~rst_ni),
 
-    .not_full           (master_ready_out),
-    .wr_en              (master_valid_out),
-    .din                (master_data_out),
+  //   .not_empty          (slave_valid_in),
+  //   .rd_en              (slave_ready_in),
+  //   .dout               (slave_data_in),
 
-    .FIFOoccupancy      ()
-  );
+  //   .not_full           (master_ready_out),
+  //   .wr_en              (master_valid_out),
+  //   .din                (master_data_out),
+
+  //   .FIFOoccupancy      ()
+  // );
 
   // axi_stream_dump #(
   //   .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
