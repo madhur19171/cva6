@@ -667,9 +667,24 @@ module ariane_testharness #(
     .write_abort        (0)
   );
 
-  Router i_router (.clk(clk_i), .rst(~rst_ni), 
-          .data_in_bus(master_data_out), .valid_in_bus(master_valid_out), .ready_in_bus(master_ready_out),
-          .data_out_bus(slave_data_in), .valid_out_bus(slave_valid_in), .ready_out_bus(5'b11111));
+  // Router i_router (.clk(clk_i), .rst(~rst_ni), 
+  //         .data_in_bus(master_data_out), .valid_in_bus(master_valid_out), .ready_in_bus(master_ready_out),
+  //         .data_out_bus(slave_data_in), .valid_out_bus(slave_valid_in), .ready_out_bus(5'b11111));
+
+  Mesh22 mesh22 (
+    .clk(clk_i), .rst(~rst_ni),
+    .Node0_data_in(master_data_out), .Node0_valid_in(master_valid_out), .Node0_ready_in(master_ready_out),
+    .Node0_data_out(), .Node0_valid_out(), .Node0_ready_out(1),
+
+    .Node1_data_in(), .Node1_valid_in(), .Node1_ready_in(),
+    .Node1_data_out(), .Node1_valid_out(), .Node1_ready_out(1),
+
+    .Node2_data_in(), .Node2_valid_in(), .Node2_ready_in(),
+    .Node2_data_out(), .Node2_valid_out(), .Node2_ready_out(1),
+
+    .Node3_data_in(), .Node3_valid_in(), .Node3_ready_in(),
+    .Node3_data_out(slave_data_in), .Node3_valid_out(slave_valid_in), .Node3_ready_out(slave_ready_in)
+  );
 
   // axi_stream_fifo #(
   //   .DATA_WIDTH(AXI_DATA_WIDTH),
