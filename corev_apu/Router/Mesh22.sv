@@ -182,22 +182,22 @@ module Mesh22(
 	assign Node1_in2_valid = Node3_out2_valid;
 	assign Node3_out2_ready = Node1_in2_ready;
 
-	Router #(.N(4), .INDEX(0), .INPUTS(3), .OUTPUTS(3), .DATA_WIDTH(64), .TYPE_WIDTH(2), .REQUEST_WIDTH($clog2(3)), .FlitPerPacket(16), .VC(1), .FIFO_DEPTH(1024), .HFBDepth(4)) Router_Node0
+	Router #(.N(4), .INDEX(0), .INPUTS(3), .OUTPUTS(3), .DATA_WIDTH(64), .TYPE_WIDTH(2), .REQUEST_WIDTH($clog2(3)), .FlitPerPacket(16), .VC(2), .FIFO_DEPTH(32), .HFBDepth(4)) Router_Node0
 		(.clk(Node0_clk), .rst(Node0_rst),
 		.data_in_bus({Node0_in2_data, Node0_in1_data, Node0_in0_data}), .valid_in_bus({Node0_in2_valid, Node0_in1_valid, Node0_in0_valid}), .ready_in_bus({Node0_in2_ready, Node0_in1_ready, Node0_in0_ready}), 
 		.data_out_bus({Node0_out2_data, Node0_out1_data, Node0_out0_data}), .valid_out_bus({Node0_out2_valid, Node0_out1_valid, Node0_out0_valid}), .ready_out_bus({Node0_out2_ready, Node0_out1_ready, Node0_out0_ready}));
 
-	Router #(.N(4), .INDEX(1), .INPUTS(3), .OUTPUTS(3), .DATA_WIDTH(64), .TYPE_WIDTH(2), .REQUEST_WIDTH($clog2(3)), .FlitPerPacket(16), .VC(1), .FIFO_DEPTH(1024), .HFBDepth(4)) Router_Node1
+	Router #(.N(4), .INDEX(1), .INPUTS(3), .OUTPUTS(3), .DATA_WIDTH(64), .TYPE_WIDTH(2), .REQUEST_WIDTH($clog2(3)), .FlitPerPacket(16), .VC(2), .FIFO_DEPTH(32), .HFBDepth(4)) Router_Node1
 		(.clk(Node1_clk), .rst(Node1_rst),
 		.data_in_bus({Node1_in2_data, Node1_in1_data, Node1_in0_data}), .valid_in_bus({Node1_in2_valid, Node1_in1_valid, Node1_in0_valid}), .ready_in_bus({Node1_in2_ready, Node1_in1_ready, Node1_in0_ready}), 
 		.data_out_bus({Node1_out2_data, Node1_out1_data, Node1_out0_data}), .valid_out_bus({Node1_out2_valid, Node1_out1_valid, Node1_out0_valid}), .ready_out_bus({Node1_out2_ready, Node1_out1_ready, Node1_out0_ready}));
 
-	Router #(.N(4), .INDEX(2), .INPUTS(3), .OUTPUTS(3), .DATA_WIDTH(64), .TYPE_WIDTH(2), .REQUEST_WIDTH($clog2(3)), .FlitPerPacket(16), .VC(1), .FIFO_DEPTH(1024), .HFBDepth(4)) Router_Node2
+	Router #(.N(4), .INDEX(2), .INPUTS(3), .OUTPUTS(3), .DATA_WIDTH(64), .TYPE_WIDTH(2), .REQUEST_WIDTH($clog2(3)), .FlitPerPacket(16), .VC(2), .FIFO_DEPTH(32), .HFBDepth(4)) Router_Node2
 		(.clk(Node2_clk), .rst(Node2_rst),
 		.data_in_bus({Node2_in2_data, Node2_in1_data, Node2_in0_data}), .valid_in_bus({Node2_in2_valid, Node2_in1_valid, Node2_in0_valid}), .ready_in_bus({Node2_in2_ready, Node2_in1_ready, Node2_in0_ready}), 
 		.data_out_bus({Node2_out2_data, Node2_out1_data, Node2_out0_data}), .valid_out_bus({Node2_out2_valid, Node2_out1_valid, Node2_out0_valid}), .ready_out_bus({Node2_out2_ready, Node2_out1_ready, Node2_out0_ready}));
 
-	Router #(.N(4), .INDEX(3), .INPUTS(3), .OUTPUTS(3), .DATA_WIDTH(64), .TYPE_WIDTH(2), .REQUEST_WIDTH($clog2(3)), .FlitPerPacket(16), .VC(1), .FIFO_DEPTH(1024), .HFBDepth(4)) Router_Node3
+	Router #(.N(4), .INDEX(3), .INPUTS(3), .OUTPUTS(3), .DATA_WIDTH(64), .TYPE_WIDTH(2), .REQUEST_WIDTH($clog2(3)), .FlitPerPacket(16), .VC(2), .FIFO_DEPTH(32), .HFBDepth(4)) Router_Node3
 		(.clk(Node3_clk), .rst(Node3_rst),
 		.data_in_bus({Node3_in2_data, Node3_in1_data, Node3_in0_data}), .valid_in_bus({Node3_in2_valid, Node3_in1_valid, Node3_in0_valid}), .ready_in_bus({Node3_in2_ready, Node3_in1_ready, Node3_in0_ready}), 
 		.data_out_bus({Node3_out2_data, Node3_out1_data, Node3_out0_data}), .valid_out_bus({Node3_out2_valid, Node3_out1_valid, Node3_out0_valid}), .ready_out_bus({Node3_out2_ready, Node3_out1_ready, Node3_out0_ready}));

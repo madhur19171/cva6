@@ -58,56 +58,6 @@
 endmodule*/
 
 
-// //Generates VCPlaneSelector Signals for all 
-// module VCPlaneController 
-// 	#(
-// 		parameter VC = 4,
-// 		parameter INIT = 0
-// 	)
-// 	(
-// 		input clk,
-// 		input rst,
-		
-// 		//VC control Signals
-// 		output [VC : 0] VCPlaneSelectorCFSM//Selects the currently active VC Plane
-// 	);
-// 	//0, 1, 2, 3, 4, 5
-// 	//3 Clock Cycles to Plane 0: Critical and 1 clock cycle each to other VCs
-// 	logic [31 : 0] counter = INIT, counterNext = 0;
-	
-// 	reg [VC : 0] state = 0;
-	
-// 	always_ff @(posedge clk)begin
-// 		if(rst)begin
-// 			counter <= INIT;
-// 		end
-		
-// 		else begin
-// 			counter <= counterNext;
-// 		end
-// 	end
-	
-// 	always_comb begin
-// 		if(counter == 3)
-// 			counterNext = 0;
-// 		else
-// 			counterNext = counter + 1;
-// 	end
-	
-// 	always_comb begin
-// 		case(counter)
-// 			0 : state = 0;
-// 			1 : state = 1;
-// 			2 : state = 2;
-// 			3 : state = 3;
-// 			default : state = 0;
-// 		endcase
-// 	end
-	
-// 	assign VCPlaneSelectorCFSM = {32'b0, state};
-	
-// endmodule
-
 //Generates VCPlaneSelector Signals for all 
 module VCPlaneController 
 	#(
@@ -123,9 +73,47 @@ module VCPlaneController
 	);
 	//0, 1, 2, 3, 4, 5
 	//3 Clock Cycles to Plane 0: Critical and 1 clock cycle each to other VCs
+	int counter = INIT, counterNext = 0;
 	
+	always_ff @(posedge clk)begin
+		if(rst)begin
+			counter <= INIT;
+		end
+		
+		else begin
+			counter <= counterNext;
+		end
+	end
 	
-	assign VCPlaneSelectorCFSM = 0;
+	always_comb begin
+		if(counter == VC - 1)
+			counterNext = 0;
+		else
+			counterNext = counter + 1;
+	end
+	
+	assign VCPlaneSelectorCFSM = counter;
 	
 endmodule
+
+// //Generates VCPlaneSelector Signals for all 
+// module VCPlaneController 
+// 	#(
+// 		parameter VC = 4,
+// 		parameter INIT = 0
+// 	)
+// 	(
+// 		input clk,
+// 		input rst,
+		
+// 		//VC control Signals
+// 		output [VC : 0] VCPlaneSelectorCFSM//Selects the currently active VC Plane
+// 	);
+// 	//0, 1, 2, 3, 4, 5
+// 	//3 Clock Cycles to Plane 0: Critical and 1 clock cycle each to other VCs
+	
+	
+// 	assign VCPlaneSelectorCFSM = 0;
+	
+// endmodule
 

@@ -667,13 +667,50 @@ module ariane_testharness #(
     .write_abort        (0)
   );
 
-  // Router i_router (.clk(clk_i), .rst(~rst_ni), 
-  //         .data_in_bus(master_data_out), .valid_in_bus(master_valid_out), .ready_in_bus(master_ready_out),
-  //         .data_out_bus(slave_data_in), .valid_out_bus(slave_valid_in), .ready_out_bus(5'b11111));
+  wire currentVC;
+  logic DMAMasterVC, DMASlaveVC;
+
+  VCPlaneController #(.INIT(0), .VC(2)) i_VCPlaneController (.clk(clk_i), .rst(~rst_ni), .VCPlaneSelectorCFSM(currentVC));
+
+  wire [63 : 0] Node0_data_in;
+  wire Node0_valid_in;
+  wire Node0_ready_in;
+
+  always_ff @(posedge clk_i) begin
+    if(~rst_ni) begin
+      DMAMasterVC <= 0;
+    end
+    else begin
+      if(master_data_out[63 : 62] == 2'b11 & master_valid_out & master_ready_out) begin
+        DMAMasterVC <= DMAMasterVC + 1; // New VC for every new Packet
+      end
+    end
+  end
+
+  assign Node0_data_in = master_data_out;
+  assign Node0_valid_in = DMAMasterVC == currentVC ? master_valid_out : 0;
+  assign master_ready_out = Node0_ready_in & currentVC == DMAMasterVC;  // Do handshake only for the active VC
+
+  wire [63 : 0] Node3_data_out;
+  wire Node3_valid_out;
+  wire Node3_ready_out;
+
+  always_ff @(posedge clk_i) begin
+    if (~rst_ni) begin
+      DMASlaveVC <= 0;
+    end
+    else if (Node3_data_out[63 : 62] == 2'b11 & Node3_valid_out & Node3_ready_out) begin
+      DMASlaveVC <= DMASlaveVC + 1;
+    end
+  end
+
+  assign slave_data_in = Node3_data_out;
+  assign slave_valid_in = currentVC == DMASlaveVC ? Node3_valid_out : 0;
+  assign Node3_ready_out = slave_ready_in & currentVC == DMASlaveVC;  // Do handshake only for the active VC
 
   Mesh22 mesh22 (
     .clk(clk_i), .rst(~rst_ni),
-    .Node0_data_in(master_data_out), .Node0_valid_in(master_valid_out), .Node0_ready_in(master_ready_out),
+    .Node0_data_in(Node0_data_in), .Node0_valid_in(Node0_valid_in), .Node0_ready_in(Node0_ready_in),
     .Node0_data_out(), .Node0_valid_out(), .Node0_ready_out(1),
 
     .Node1_data_in(), .Node1_valid_in(), .Node1_ready_in(),
@@ -683,7 +720,7 @@ module ariane_testharness #(
     .Node2_data_out(), .Node2_valid_out(), .Node2_ready_out(1),
 
     .Node3_data_in(), .Node3_valid_in(), .Node3_ready_in(),
-    .Node3_data_out(slave_data_in), .Node3_valid_out(slave_valid_in), .Node3_ready_out(slave_ready_in)
+    .Node3_data_out(Node3_data_out), .Node3_valid_out(Node3_valid_out), .Node3_ready_out(Node3_ready_out)
   );
 
   // axi_stream_fifo #(
