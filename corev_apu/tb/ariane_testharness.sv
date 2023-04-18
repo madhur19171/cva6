@@ -27,15 +27,25 @@ module ariane_testharness #(
 `endif
   parameter int unsigned NUM_WORDS         = 2**25,         // memory size
   parameter bit          StallRandomOutput = 1'b0,
-  parameter bit          StallRandomInput  = 1'b0
+  parameter bit          StallRandomInput  = 1'b0,
+
+  parameter hart_id_in = 0
 ) (
   input  logic                           clk_i,
   input  logic                           rtc_i,
   input  logic                           rst_ni,
-  output logic [31:0]                    exit_o
+  output logic [31:0]                    exit_o,
+
+  output [63 : 0] data_out,
+  output valid_out,
+  input ready_out,
+
+  input [63 : 0] data_in,
+  input valid_in,
+  output ready_in
 );
 
-  localparam [7:0] hart_id = '0;
+  localparam [7:0] hart_id = hart_id_in;
 
   // disable test-enable
   logic        test_en;
@@ -667,14 +677,11 @@ module ariane_testharness #(
     .write_abort        (0)
   );
 
+  // Router NI Arbiter Starts
   wire currentVC;
   logic DMAMasterVC, DMASlaveVC;
 
   VCPlaneController #(.INIT(0), .VC(2)) i_VCPlaneController (.clk(clk_i), .rst(~rst_ni), .VCPlaneSelectorCFSM(currentVC));
-
-  wire [63 : 0] Node0_data_in;
-  wire Node0_valid_in;
-  wire Node0_ready_in;
 
   always_ff @(posedge clk_i) begin
     if(~rst_ni) begin
@@ -687,41 +694,24 @@ module ariane_testharness #(
     end
   end
 
-  assign Node0_data_in = master_data_out;
-  assign Node0_valid_in = DMAMasterVC == currentVC ? master_valid_out : 0;
-  assign master_ready_out = Node0_ready_in & currentVC == DMAMasterVC;  // Do handshake only for the active VC
-
-  wire [63 : 0] Node3_data_out;
-  wire Node3_valid_out;
-  wire Node3_ready_out;
+  assign data_out = master_data_out;
+  assign valid_out = DMAMasterVC == currentVC ? master_valid_out : 0;
+  assign master_ready_out = ready_out & currentVC == DMAMasterVC;  // Do handshake only for the active VC
 
   always_ff @(posedge clk_i) begin
     if (~rst_ni) begin
       DMASlaveVC <= 0;
     end
-    else if (Node3_data_out[63 : 62] == 2'b11 & Node3_valid_out & Node3_ready_out) begin
+    else if (data_in[63 : 62] == 2'b11 & valid_in & ready_in) begin
       DMASlaveVC <= DMASlaveVC + 1;
     end
   end
 
-  assign slave_data_in = Node3_data_out;
-  assign slave_valid_in = currentVC == DMASlaveVC ? Node3_valid_out : 0;
-  assign Node3_ready_out = slave_ready_in & currentVC == DMASlaveVC;  // Do handshake only for the active VC
+  assign slave_data_in = data_in;
+  assign slave_valid_in = currentVC == DMASlaveVC ? valid_in : 0;
+  assign ready_in = slave_ready_in & currentVC == DMASlaveVC;  // Do handshake only for the active VC
 
-  Mesh22 mesh22 (
-    .clk(clk_i), .rst(~rst_ni),
-    .Node0_data_in(Node0_data_in), .Node0_valid_in(Node0_valid_in), .Node0_ready_in(Node0_ready_in),
-    .Node0_data_out(), .Node0_valid_out(), .Node0_ready_out(1),
-
-    .Node1_data_in(), .Node1_valid_in(), .Node1_ready_in(),
-    .Node1_data_out(), .Node1_valid_out(), .Node1_ready_out(1),
-
-    .Node2_data_in(), .Node2_valid_in(), .Node2_ready_in(),
-    .Node2_data_out(), .Node2_valid_out(), .Node2_ready_out(1),
-
-    .Node3_data_in(), .Node3_valid_in(), .Node3_ready_in(),
-    .Node3_data_out(Node3_data_out), .Node3_valid_out(Node3_valid_out), .Node3_ready_out(Node3_ready_out)
-  );
+  // Router NI Arbiter Ends
 
   // axi_stream_fifo #(
   //   .DATA_WIDTH(AXI_DATA_WIDTH),

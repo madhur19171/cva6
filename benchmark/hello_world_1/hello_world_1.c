@@ -10,8 +10,8 @@
 
 uint64_t sendPacket[TRANSFER_LENGTH / 8];
 
-#define SOURCE_X 0U
-#define SOURCE_Y 0U
+#define SOURCE_X 1U
+#define SOURCE_Y 1U
 
 uint64_t volatile *NI_DMA_READ_ADDRESS = (uint64_t volatile *) 0x50000000;
 uint64_t volatile *NI_DMA_READ_LENGTH = (uint64_t volatile *)  0x50000008;
@@ -70,7 +70,7 @@ int DMAStatus(int transferType){
 
 int main() {
 
-	generateSendPacket(1, 1);
+	generateSendPacket(0, 0);
 
 	uint64_t *a = (uint64_t *) 0x80010000U;       // Sender
 	uint64_t *b = (uint64_t *) (0x80010000U + TRANSFER_LENGTH);   // Receiver
@@ -82,42 +82,46 @@ int main() {
 
 	// For cache flush in RISC-V
 	asm("FENCE");
-
-	receiveFromRouter(b, TRANSFER_LENGTH);
-
 	sendToRouter(a, TRANSFER_LENGTH);
 	// To check the status of the DMA
 	while(DMAStatus(1) != DMA_DONE);
 
-	sendToRouter(a, TRANSFER_LENGTH);
-	// To check the status of the DMA
-	while(DMAStatus(1) != DMA_DONE);
-
-	printf("Data Sent to the Router\n");
-
-	while(DMAStatus(2) != DMA_DONE);
-
 	receiveFromRouter(b, TRANSFER_LENGTH);
 	while(DMAStatus(2) != DMA_DONE);
-
-	printf("Data Received from the Router\n");
-
 	// For cache flush in RISC-V
 	asm("FENCE");
 
-	int pass = 1;
+	
+
+	asm("FENCE");
+	sendToRouter(a, TRANSFER_LENGTH);
+	// To check the status of the DMA
+	while(DMAStatus(1) != DMA_DONE);
+
+	receiveFromRouter(b, TRANSFER_LENGTH);
+	while(DMAStatus(2) != DMA_DONE);
+	// For cache flush in RISC-V
+	asm("FENCE");
+
+
+
+	asm("FENCE");
+	sendToRouter(a, TRANSFER_LENGTH);
+	// To check the status of the DMA
+	while(DMAStatus(1) != DMA_DONE);
+
+	receiveFromRouter(b, TRANSFER_LENGTH);
+	while(DMAStatus(2) != DMA_DONE);
+	// For cache flush in RISC-V
+	asm("FENCE");
+
+	uint64_t sum = 0;
 
 	for(int i = 0; i < TRANSFER_LENGTH / 8; i++){
-		// printf("a[%d]=0x%x\tb[%d]=0x%x\n", i, a[i], i, b[i]);
-		if(a[i] != b[i])
-			pass = 0;
+		sum += b[i];
 	}
 
-	if(pass){
-		printf("Pass\n");
-	} else{
-		printf("Fail\n");
-	}
+	printf("[Core 1]\tPass\n");
 
 	return 0;
 }

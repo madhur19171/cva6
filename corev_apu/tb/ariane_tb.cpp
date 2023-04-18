@@ -15,12 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "Variane_testharness.h"
-#include "Variane_testharness___024root.h"
+#include "Variane_testharness_wrapper.h"
+#include "Variane_testharness_wrapper___024root.h"
 #include "verilator.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"
-#include "Variane_testharness__Dpi.h"
+#include "Variane_testharness_wrapper__Dpi.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -284,13 +284,18 @@ done_processing:
   signal(SIGTERM, handle_sigterm);
 #endif
 
-  std::unique_ptr<Variane_testharness> top(new Variane_testharness);
+  std::unique_ptr<Variane_testharness_wrapper> top(new Variane_testharness_wrapper);
 
   // Use an hitf hexwriter to read the binary data.
-  htif_hexwriter_t htif(0x0, 1, -1);
-  memif_t memif(&htif);
-  reg_t entry;
-  load_elf(htif_argv[1], &memif, &entry);
+  htif_hexwriter_t htif_0(0x0, 1, -1);
+  memif_t memif_0(&htif_0);
+  reg_t entry_0;
+  load_elf(htif_argv[1], &memif_0, &entry_0);
+
+  htif_hexwriter_t htif_1(0x0, 1, -1);
+  memif_t memif_1(&htif_1);
+  reg_t entry_1;
+  load_elf(htif_argv[2], &memif_1, &entry_1);
 
 #if VM_TRACE
   Verilated::traceEverOn(true); // Verilator must compute traced signals
@@ -322,9 +327,14 @@ done_processing:
   // Preload memory.
   size_t mem_size = 0xffffff;
   std::cout << "Memory Loading Started" << std::endl;
-  memif.read(0x80000000, mem_size, (void *)
-  (&(top->rootp->ariane_testharness__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__i_tc_sram_wrapper__DOT__i_tc_sram__DOT__sram.m_storage[0])));
+
+  memif_0.read(0x80000000, mem_size, (void *)
+  (&(top->rootp->ariane_testharness_wrapper__DOT__i_ariane_testharness_0__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__i_tc_sram_wrapper__DOT__i_tc_sram__DOT__sram.m_storage[0])));
+  
+  memif_1.read(0x80000000, mem_size, (void *)
+  (&(top->rootp->ariane_testharness_wrapper__DOT__i_ariane_testharness_1__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__i_tc_sram_wrapper__DOT__i_tc_sram__DOT__sram.m_storage[0])));
   //memif.read(0x84000000, mem_size, (void *)top->ariane_testharness__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__gen_mem_user__DOT__i_tc_sram_wrapper_user__DOT__i_tc_sram__DOT__sram);
+  
   std::cout << "Memory Loading Finished" << std::endl;
   
 #ifndef DROMAJO

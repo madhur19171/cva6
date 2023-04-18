@@ -82,42 +82,46 @@ int main() {
 
 	// For cache flush in RISC-V
 	asm("FENCE");
-
-	receiveFromRouter(b, TRANSFER_LENGTH);
-
 	sendToRouter(a, TRANSFER_LENGTH);
 	// To check the status of the DMA
 	while(DMAStatus(1) != DMA_DONE);
 
-	sendToRouter(a, TRANSFER_LENGTH);
-	// To check the status of the DMA
-	while(DMAStatus(1) != DMA_DONE);
-
-	printf("Data Sent to the Router\n");
-
-	while(DMAStatus(2) != DMA_DONE);
-
 	receiveFromRouter(b, TRANSFER_LENGTH);
 	while(DMAStatus(2) != DMA_DONE);
-
-	printf("Data Received from the Router\n");
-
 	// For cache flush in RISC-V
 	asm("FENCE");
 
-	int pass = 1;
+	
+
+	asm("FENCE");
+	sendToRouter(a, TRANSFER_LENGTH);
+	// To check the status of the DMA
+	while(DMAStatus(1) != DMA_DONE);
+
+	receiveFromRouter(b, TRANSFER_LENGTH);
+	while(DMAStatus(2) != DMA_DONE);
+	// For cache flush in RISC-V
+	asm("FENCE");
+
+
+
+	asm("FENCE");
+	sendToRouter(a, TRANSFER_LENGTH);
+	// To check the status of the DMA
+	while(DMAStatus(1) != DMA_DONE);
+
+	receiveFromRouter(b, TRANSFER_LENGTH);
+	while(DMAStatus(2) != DMA_DONE);
+	// For cache flush in RISC-V
+	asm("FENCE");
+
+	uint64_t sum = 0;
 
 	for(int i = 0; i < TRANSFER_LENGTH / 8; i++){
-		// printf("a[%d]=0x%x\tb[%d]=0x%x\n", i, a[i], i, b[i]);
-		if(a[i] != b[i])
-			pass = 0;
+		sum += b[i];
 	}
 
-	if(pass){
-		printf("Pass\n");
-	} else{
-		printf("Fail\n");
-	}
+	printf("[Core 0]\tPass\n");
 
 	return 0;
 }

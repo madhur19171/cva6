@@ -237,6 +237,7 @@ src :=  $(filter-out core/ariane_regfile.sv, $(wildcard core/*.sv))             
         corev_apu/src/tech_cells_generic/src/rtl/tc_sram.sv                          \
         corev_apu/src/tech_cells_generic/src/rtl/tc_clk.sv                           \
         corev_apu/tb/ariane_testharness.sv                                           \
+		corev_apu/tb/ariane_testharness_wrapper.sv                                           \
         corev_apu/tb/ariane_peripherals.sv                                           \
         corev_apu/tb/rvfi_tracer.sv                                                  \
         corev_apu/tb/common/uart.sv                                                  \
@@ -614,7 +615,7 @@ verilate_command := $(verilator)                                                
                     -LDFLAGS "-L$(RISCV)/lib -L$(SPIKE_ROOT)/lib -Wl,-rpath,$(RISCV)/lib -Wl,-rpath,$(SPIKE_ROOT)/lib -lfesvr$(if $(PROFILE), -g -pg,) $(if $(DROMAJO), -L../corev_apu/tb/dromajo/src -ldromajo_cosim,) -lpthread" \
                     -CFLAGS "$(CFLAGS)$(if $(PROFILE), -g -pg,) $(if $(DROMAJO), -DDROMAJO=1,) -DVL_DEBUG"       \
                     -Wall --cc  --vpi                                                                            \
-                    $(list_incdir) --top-module ariane_testharness                                               \
+                    $(list_incdir) --top-module ariane_testharness_wrapper                                               \
 					--threads-dpi none 																			 \
                     --Mdir $(ver-library) -O3                                                                    \
                     --exe corev_apu/tb/ariane_tb.cpp corev_apu/tb/dpi/SimDTM.cc corev_apu/tb/dpi/SimJTAG.cc      \
@@ -684,7 +685,7 @@ checkpoint_dromajo:
 verilate: $(if $(DROMAJO), dromajo,)
 	@echo "[Verilator] Building Model$(if $(PROFILE), for Profiling,)"
 	$(verilate_command)
-	cd $(ver-library) && $(MAKE) -j${NUM_JOBS} -f Variane_testharness.mk
+	cd $(ver-library) && $(MAKE) -j${NUM_JOBS} -f Variane_testharness_wrapper.mk
 
 sim-verilator: verilate
 	$(ver-library)/Variane_testharness $(elf-bin)
