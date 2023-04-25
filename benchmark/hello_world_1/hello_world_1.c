@@ -20,13 +20,16 @@ uint64_t volatile *NI_DMA_WRITE_ADDRESS = (uint64_t volatile *) 0x50000018;
 uint64_t volatile *NI_DMA_WRITE_LENGTH = (uint64_t volatile *)  0x50000020;
 uint64_t volatile *NI_DMA_WRITE_STATUS = (uint64_t volatile *)  0x50000028;
 
-void generateSendPacket(uint32_t dest_x, uint32_t dest_y){
+void __attribute__ ((noinline)) generateSendPacket(uint64_t *sendPacket, uint32_t dest_x, uint32_t dest_y, uint32_t messageNumber){
 	int packetLength = TRANSFER_LENGTH / 8;
 	uint64_t flit = 0;
 	for(int i = 0; i < packetLength; i++){
 		flit = 0;
 		if(i == 0){
 			flit |= 1lU << 62;
+
+			flit |= messageNumber << 4;
+
 			flit |= SOURCE_X << 3;
 			flit |= SOURCE_Y << 2;
 
@@ -36,7 +39,7 @@ void generateSendPacket(uint32_t dest_x, uint32_t dest_y){
 			flit |= 3lU << 62;
 		} else{
 			flit |= 2lU << 62;
-			flit |= 0xff<< 4;
+			flit |= messageNumber << 8;
 			flit |= i;
 		}
 
@@ -44,19 +47,19 @@ void generateSendPacket(uint32_t dest_x, uint32_t dest_y){
 	}
 }
 
-void sendToRouter(uint64_t *a, uint64_t transferLength){
+void __attribute__ ((noinline)) sendToRouter(uint64_t *a, uint64_t transferLength){
 	*NI_DMA_READ_ADDRESS = a;
 	*NI_DMA_READ_LENGTH = transferLength;
 }
 
-void receiveFromRouter(uint64_t *a, uint64_t transferLength){
+void __attribute__ ((noinline)) receiveFromRouter(uint64_t *a, uint64_t transferLength){
 	*NI_DMA_WRITE_ADDRESS = a;
 	*NI_DMA_WRITE_LENGTH = transferLength;
 }
 
 // transferType is 1 for Read and 2 for Write
 // Returns DMA_BUSY, DMA_ERROR and DMA_DONE
-int DMAStatus(int transferType){
+int __attribute__ ((noinline)) DMAStatus(int transferType){
 	volatile uint64_t x;
 
 	if(transferType == 1){
@@ -70,17 +73,29 @@ int DMAStatus(int transferType){
 
 int main() {
 
-	generateSendPacket(0, 0);
-
 	uint64_t *a = (uint64_t *) 0x80010000U;       // Sender
 	uint64_t *b = (uint64_t *) (0x80010000U + TRANSFER_LENGTH);   // Receiver
 	
 	for(int i = 0; i < TRANSFER_LENGTH / 8; i++){
-		a[i] = sendPacket[i];
+		a[i] = 0;
 		b[i] = 0;
 	}
 
+	generateSendPacket(a, 0, 0, 1);
 	// For cache flush in RISC-V
+	asm("FENCE");
+	sendToRouter(a, TRANSFER_LENGTH);
+	// printf("[Core 1]\tTest 1 Send Configured\n");
+	// To check the status of the DMA
+	while(DMAStatus(1) != DMA_DONE);
+	// printf("[Core 1]\tTest 1 Sent\n");
+
+	receiveFromRouter(b, TRANSFER_LENGTH);
+	while(DMAStatus(2) != DMA_DONE);
+	// For cache flush in RISC-V
+
+
+	generateSendPacket(a, 0, 0, 2);
 	asm("FENCE");
 	sendToRouter(a, TRANSFER_LENGTH);
 	// To check the status of the DMA
@@ -89,22 +104,9 @@ int main() {
 	receiveFromRouter(b, TRANSFER_LENGTH);
 	while(DMAStatus(2) != DMA_DONE);
 	// For cache flush in RISC-V
-	asm("FENCE");
-
-	
-
-	asm("FENCE");
-	sendToRouter(a, TRANSFER_LENGTH);
-	// To check the status of the DMA
-	while(DMAStatus(1) != DMA_DONE);
-
-	receiveFromRouter(b, TRANSFER_LENGTH);
-	while(DMAStatus(2) != DMA_DONE);
-	// For cache flush in RISC-V
-	asm("FENCE");
 
 
-
+	generateSendPacket(a, 0, 0, 3);
 	asm("FENCE");
 	sendToRouter(a, TRANSFER_LENGTH);
 	// To check the status of the DMA
@@ -113,78 +115,12 @@ int main() {
 	receiveFromRouter(b, TRANSFER_LENGTH);
 	while(DMAStatus(2) != DMA_DONE);
 	// For cache flush in RISC-V
-	asm("FENCE");
 
-	uint64_t sum = 0;
+	// uint64_t sum = 0;
 
-	for(int i = 0; i < TRANSFER_LENGTH / 8; i++){
-		sum += b[i];
-	}
-
-	printf("[Core 1]\tPass\n");
+	// for(int i = 0; i < TRANSFER_LENGTH / 8; i++){
+	// 	sum += b[i];
+	// }
 
 	return 0;
 }
-
-// int main() {
-
-// 	uint64_t volatile *NI_DMA_READ_ADDRESS = (uint64_t volatile *) 0x50000000;
-// 	uint64_t volatile *NI_DMA_READ_LENGTH = (uint64_t volatile *)  0x50000008;
-// 	uint64_t volatile *NI_DMA_READ_STATUS = (uint64_t volatile *)  0x50000010;
-
-// 	uint64_t volatile *NI_DMA_WRITE_ADDRESS = (uint64_t volatile *) 0x50000018;
-// 	uint64_t volatile *NI_DMA_WRITE_LENGTH = (uint64_t volatile *)  0x50000020;
-// 	uint64_t volatile *NI_DMA_WRITE_STATUS = (uint64_t volatile *)  0x50000028;
-
-// 	volatile uint64_t *a = (volatile uint64_t *) 0x80010000U;       // Sender
-// 	volatile uint64_t *b = (volatile uint64_t *) (0x80010000U + TRANSFER_LENGTH);   // Receiver
-	
-// 	for(int i = 0; i < TRANSFER_LENGTH / 8; i++){
-// 		a[i] = i;
-// 		b[i] = 0;
-// 	}
-
-// 	// For cache flush in RISC-V
-// 	asm("FENCE");
-
-// 	volatile uint64_t x;    // To check the status of the DMA
-
-// 	*NI_DMA_WRITE_ADDRESS = b;
-// 	*NI_DMA_WRITE_LENGTH = TRANSFER_LENGTH;
-
-// 	*NI_DMA_READ_ADDRESS = a;
-// 	*NI_DMA_READ_LENGTH = TRANSFER_LENGTH;
-
-// 	do {
-// 		x = *NI_DMA_READ_STATUS;
-// 	} while(x == DMA_BUSY);
-
-// 	// *NI_DMA_READ_ADDRESS = b;
-// 	// *NI_DMA_READ_LENGTH = TRANSFER_LENGTH;
-// 	// do {
-// 	// 	x = *NI_DMA_READ_STATUS;
-// 	// } while(x == DMA_BUSY);
-
-// 	do {
-// 		x = *NI_DMA_WRITE_STATUS;
-// 	} while(x == DMA_BUSY);
-
-
-// 	// For cache flush in RISC-V
-// 	asm("FENCE");
-
-// 	int pass = 1;
-
-// 	for(int i = 0; i < TRANSFER_LENGTH / 8; i++){
-// 		if(a[i] != b[i])
-// 			pass = 0;
-// 	}
-
-// 	if(pass){
-// 		printf("Pass\n");
-// 	} else{
-// 		printf("Fail\n");
-// 	}
-
-// 	return 0;
-// }

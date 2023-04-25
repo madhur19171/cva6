@@ -25,7 +25,7 @@ module ariane_testharness_wrapper(
 
         );
 
-    ariane_testharness #(.hart_id_in(0)) i_ariane_testharness_1
+    ariane_testharness #(.hart_id_in(1)) i_ariane_testharness_1
         (
             .clk_i(clk_i),
             .rtc_i(rtc_i),
