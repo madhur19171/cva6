@@ -680,6 +680,7 @@ module ariane_testharness #(
   // Router NI Arbiter Starts
   wire currentVC;
   logic DMAMasterVC, DMASlaveVC;
+  logic masterVCBusy;
 
   VCPlaneController #(.INIT(0), .VC(2)) i_VCPlaneController (.clk(clk_i), .rst(~rst_ni), .VCPlaneSelectorCFSM(currentVC));
 
@@ -702,8 +703,21 @@ module ariane_testharness #(
     if (~rst_ni) begin
       DMASlaveVC <= 0;
     end
-    else if (data_in[63 : 62] == 2'b01 & valid_in) begin
+    else if (data_in[63 : 62] == 2'b01 & valid_in & ~masterVCBusy) begin  // Don't allocate new VC till the current packet is read off of the current VC
       DMASlaveVC <= currentVC;          // Allocate the VC to the first VC which sends any valid data
+    end
+  end
+
+  // Tracs if the currnt packet has been read in its entirety
+  always_ff @(posedge clk_i) begin
+    if (~rst_ni) begin
+      masterVCBusy <= 0;
+    end
+    else if (data_in[63 : 62] == 2'b01 & valid_in & ~masterVCBusy) begin
+      masterVCBusy <= 1;
+    end
+    else if(data_in[63 : 62] == 2'b11 & valid_in & ready_in) begin
+      masterVCBusy <= 0;
     end
   end
 
