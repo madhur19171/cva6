@@ -287,15 +287,27 @@ done_processing:
   std::unique_ptr<Variane_testharness_wrapper> top(new Variane_testharness_wrapper);
 
   // Use an hitf hexwriter to read the binary data.
-  htif_hexwriter_t htif_0(0x0, 1, -1);
-  memif_t memif_0(&htif_0);
-  reg_t entry_0;
-  load_elf(htif_argv[1], &memif_0, &entry_0);
+  // Due to Multicore support, currently, arguments 
+  // can not be passed to binary being run on the cores
 
-  htif_hexwriter_t htif_1(0x0, 1, -1);
-  memif_t memif_1(&htif_1);
-  reg_t entry_1;
-  load_elf(htif_argv[2], &memif_1, &entry_1);
+  
+  // The first argument must be the number of cores being simulated
+  // followed by the binary for each of the cores in ascending order
+  int numberOfCores = std::stoi(htif_argv[1]);
+
+  // C++ Reference for creating an array of objects
+  // https://stackoverflow.com/questions/255612/dynamically-allocating-an-array-of-objects
+
+  htif_hexwriter_t *htif = (htif_hexwriter_t *) malloc(sizeof(htif_hexwriter_t) * numberOfCores);
+  memif_t *memif = (memif_t *) malloc(sizeof(memif_t) * numberOfCores);
+  reg_t *entry = (reg_t *) malloc(sizeof(reg_t) * numberOfCores);
+
+  for(int i = 0; i < numberOfCores; i++){
+    new (&htif[i]) htif_hexwriter_t(0x0, 1, -1);
+    new (&memif[i]) memif_t(&htif[i]);
+    load_elf(htif_argv[2 + i], &memif[i], &entry[i]);
+  }
+
 
 #if VM_TRACE
   Verilated::traceEverOn(true); // Verilator must compute traced signals
@@ -328,12 +340,18 @@ done_processing:
   size_t mem_size = 0xffffff;
   std::cout << "Memory Loading Started" << std::endl;
 
-  memif_0.read(0x80000000, mem_size, (void *)
-  (&(top->rootp->ariane_testharness_wrapper__DOT__i_ariane_testharness_0__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__i_tc_sram_wrapper__DOT__i_tc_sram__DOT__sram.m_storage[0])));
+  // Add as many Reads as the number of cores
+  memif[0].read(0x80000000, mem_size, (void *)
+  (&(top->rootp->ariane_testharness_wrapper__DOT__ARIANE_TEST_HARNESS_GEN__BRA__0__KET____DOT__i_ariane_testharness__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__i_tc_sram_wrapper__DOT__i_tc_sram__DOT__sram.m_storage[0])));
   
-  memif_1.read(0x80000000, mem_size, (void *)
-  (&(top->rootp->ariane_testharness_wrapper__DOT__i_ariane_testharness_1__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__i_tc_sram_wrapper__DOT__i_tc_sram__DOT__sram.m_storage[0])));
-  //memif.read(0x84000000, mem_size, (void *)top->ariane_testharness__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__gen_mem_user__DOT__i_tc_sram_wrapper_user__DOT__i_tc_sram__DOT__sram);
+  memif[1].read(0x80000000, mem_size, (void *)
+  (&(top->rootp->ariane_testharness_wrapper__DOT__ARIANE_TEST_HARNESS_GEN__BRA__1__KET____DOT__i_ariane_testharness__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__i_tc_sram_wrapper__DOT__i_tc_sram__DOT__sram.m_storage[0])));
+  
+  memif[2].read(0x80000000, mem_size, (void *)
+  (&(top->rootp->ariane_testharness_wrapper__DOT__ARIANE_TEST_HARNESS_GEN__BRA__2__KET____DOT__i_ariane_testharness__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__i_tc_sram_wrapper__DOT__i_tc_sram__DOT__sram.m_storage[0])));
+  
+  memif[3].read(0x80000000, mem_size, (void *)
+  (&(top->rootp->ariane_testharness_wrapper__DOT__ARIANE_TEST_HARNESS_GEN__BRA__3__KET____DOT__i_ariane_testharness__DOT__i_sram__DOT__gen_cut__BRA__0__KET____DOT__gen_mem__DOT__i_tc_sram_wrapper__DOT__i_tc_sram__DOT__sram.m_storage[0])));
   
   std::cout << "Memory Loading Finished" << std::endl;
   

@@ -702,8 +702,8 @@ module ariane_testharness #(
     if (~rst_ni) begin
       DMASlaveVC <= 0;
     end
-    else if (data_in[63 : 62] == 2'b11 & valid_in & ready_in) begin
-      DMASlaveVC <= DMASlaveVC + 1;
+    else if (data_in[63 : 62] == 2'b01 & valid_in) begin
+      DMASlaveVC <= currentVC;          // Allocate the VC to the first VC which sends any valid data
     end
   end
 
