@@ -19,6 +19,7 @@ uint64_t volatile *NI_DMA_READ_STATUS = (uint64_t volatile *)  0x50000010;
 uint64_t volatile *NI_DMA_WRITE_ADDRESS = (uint64_t volatile *) 0x50000018;
 uint64_t volatile *NI_DMA_WRITE_LENGTH = (uint64_t volatile *)  0x50000020;
 uint64_t volatile *NI_DMA_WRITE_STATUS = (uint64_t volatile *)  0x50000028;
+uint64_t volatile *NI_DMA_DEBUG = (uint64_t volatile *)  0x50000030;
 
 void __attribute__ ((noinline)) generateSendPacket(uint64_t *sendPacket, uint32_t dest_x, uint32_t dest_y, uint32_t messageNumber){
 	int packetLength = TRANSFER_LENGTH / 8;
@@ -55,6 +56,10 @@ void __attribute__ ((noinline)) sendToRouter(uint64_t *a, uint64_t transferLengt
 void __attribute__ ((noinline)) receiveFromRouter(uint64_t *a, uint64_t transferLength){
 	*NI_DMA_WRITE_ADDRESS = a;
 	*NI_DMA_WRITE_LENGTH = transferLength;
+}
+
+void __attribute__ ((noinline)) writeToDebug(uint64_t a){
+	*NI_DMA_DEBUG = a;
 }
 
 // transferType is 1 for Read and 2 for Write
@@ -115,11 +120,7 @@ int main() {
 	while(DMAStatus(2) != DMA_DONE);
 	// For cache flush in RISC-V
 
-	// uint64_t sum = 0;
-
-	// for(int i = 0; i < TRANSFER_LENGTH / 8; i++){
-	// 	sum += b[i];
-	// }
+	writeToDebug(0);
 
 	return 0;
 }
