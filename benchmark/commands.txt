@@ -1,0 +1,7 @@
+For CVA6-NoC-Multicore:
+
+First, copy the "common" folder's content viz. crt.S and syscalls.c into /tmp/riscv-tests/benchmarks/common/
+These contain the modified assembly code and syscalls.c to allow support for multicore environment 
+
+-> 4 is the number of cores being simulated. Followed by 4 binary paths to be run on respective cores
+./Variane_testharness_wrapper 4 ../tmp/riscv-tests/build/benchmarks/array_sum_0.riscv ../tmp/riscv-tests/build/benchmarks/array_sum_1.riscv ../tmp/riscv-tests/build/benchmarks/array_sum_2.riscv ../tmp/riscv-tests/build/benchmarks/array_sum_3.riscv
